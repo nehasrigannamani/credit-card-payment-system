@@ -1,102 +1,153 @@
 ﻿# Credit Card Payment System
 
-A learning project that uses Django REST Framework for user authentication, card management, transaction history, and administration, with a separate FastAPI service for payment processing and MySQL as the database.
+A learning project that combines Django REST Framework and FastAPI to provide user authentication, card metadata management, simulated payment processing, transaction history, and administration using MySQL.
 
 ## Technologies
-- Python
-- Django and Django REST Framework
-- Simple JWT
-- FastAPI and Pydantic
-- SQLAlchemy
-- MySQL
-- pytest and pytest-cov
+
+* Python
+* Django and Django REST Framework
+* Simple JWT
+* FastAPI and Pydantic
+* SQLAlchemy
+* MySQL
+* PyMySQL
+* pytest, pytest-django, and pytest-cov
 
 ## Project Structure
-- `users/` — registration, login, profile, and logout
-- `cards/` — card metadata management
-- `transactions/` — transaction history and filters
-- `admin_logs/` — administrative activity logs
-- `fastapi_app/` — payment processing service and tests
-- `config/` — Django settings and URL configuration
-- `templates/` — Django admin templates
+
+* `users/` — user registration, login, profile, and logout
+* `cards/` — card metadata management
+* `transactions/` — transaction history, filtering, and CSV export
+* `admin_logs/` — administrative activity logs
+* `fastapi_app/` — payment processing API and tests
+* `config/` — Django settings and URL configuration
+* `templates/` — custom Django admin templates
+* `credit_card_payment_system.postman_collection.json` — Postman API collection
+* `requirements.txt` — Python dependencies
+* `.env.example` — environment variable template
+
+## Prerequisites
+
+* Python and pip
+* MySQL Server
+* Git
+* Postman (for API testing)
 
 ## Setup
 
-Run commands from the project root in PowerShell.
+Run the following commands from the project root in PowerShell.
 
-1. Activate your virtual environment:
+### 1. Create and activate a virtual environment
 
-   ```powershell
-   .\venv\Scripts\Activate.ps1
-   ```
+If you already have a working virtual environment, activate it instead.
 
-2. Ensure the project dependencies are installed in the virtual environment.
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
 
-3. Create the MySQL database:
+### 2. Install dependencies
 
-   ```sql
-   CREATE DATABASE credit_card_payment_db;
-   ```
+```powershell
+python -m pip install -r requirements.txt
+```
 
-4. Configure the MySQL connection in Django settings and `fastapi_app/database.py` using your own local database credentials. Never commit passwords or tokens to Git.
+### 3. Create the MySQL database
 
-5. Apply migrations:
+Create the project database in MySQL:
 
-   ```powershell
-   python manage.py migrate
-   ```
+```sql
+CREATE DATABASE credit_card_payment_db;
+```
 
-6. Create an admin account if needed:
+### 4. Configure environment variables
 
-   ```powershell
-   python manage.py createsuperuser
-   ```
+Create your local `.env` file using `.env.example` as a template. Replace the placeholder values with your own local settings.
+
+The required variables are:
+
+* `DJANGO_SECRET_KEY` — a strong, private Django secret key
+* `DATABASE_URL` — the SQLAlchemy connection URL for your MySQL database
+
+Example URL format:
+
+```text
+mysql+pymysql://DB_USER:DB_PASSWORD@localhost:3306/credit_card_payment_db
+```
+
+Use your own database username and password. URL-encode special characters in the password when required by the connection URL format.
+
+**Security:** Never commit `.env`, real passwords, secret keys, access tokens, or other credentials to GitHub.
+
+### 5. Apply database migrations
+
+```powershell
+python manage.py migrate
+```
+
+### 6. Create a Django admin account
+
+```powershell
+python manage.py createsuperuser
+```
+
+Follow the prompts to create your local admin account.
 
 ## Start the Services
 
-Open two terminals from the project folder and activate the virtual environment in both.
+Open two PowerShell terminals in the project folder and activate the virtual environment in both.
 
-### Django
+### Django service
 
 ```powershell
 python manage.py runserver 127.0.0.1:8000
 ```
 
-Admin: http://127.0.0.1:8000/admin/
+* Base URL: `http://127.0.0.1:8000`
+* Admin site: `http://127.0.0.1:8000/admin/`
 
-### FastAPI
+### FastAPI payment service
+
+In the second terminal:
 
 ```powershell
 python -m uvicorn fastapi_app.main:app --host 127.0.0.1 --port 8001
 ```
 
-API documentation: http://127.0.0.1:8001/docs
+* Base URL: `http://127.0.0.1:8001`
+* Swagger documentation: `http://127.0.0.1:8001/docs`
 
 ## API Endpoints
 
-Django base URL: `http://127.0.0.1:8000`
+### Django API
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/api/users/register/` | Register a user |
-| POST | `/api/users/login/` | Obtain JWT tokens |
-| GET | `/api/users/profile/` | Get the authenticated user's profile |
-| POST | `/api/users/logout/` | Blacklist a refresh token |
-| POST | `/api/cards/add/` | Add card metadata |
-| GET | `/api/cards/` | List the authenticated user's cards |
-| DELETE | `/api/cards/{card_id}/` | Delete the authenticated user's card |
-| GET | `/api/transactions/` | View transaction history |
+Base URL: `http://127.0.0.1:8000`
 
-FastAPI base URL: `http://127.0.0.1:8001`
+| Method | Endpoint                | Purpose                                   |
+| ------ | ----------------------- | ----------------------------------------- |
+| POST   | `/api/users/register/`  | Register a user                           |
+| POST   | `/api/users/login/`     | Obtain JWT tokens                         |
+| GET    | `/api/users/profile/`   | Retrieve the authenticated user's profile |
+| POST   | `/api/users/logout/`    | Blacklist a refresh token                 |
+| POST   | `/api/cards/add/`       | Add card metadata                         |
+| GET    | `/api/cards/`           | List the authenticated user's cards       |
+| DELETE | `/api/cards/{card_id}/` | Delete the authenticated user's card      |
+| GET    | `/api/transactions/`    | Retrieve transaction history              |
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/` | Check that the payment service is running |
-| POST | `/payments/` | Submit a simulated payment request |
+### FastAPI API
+
+Base URL: `http://127.0.0.1:8001`
+
+| Method | Endpoint     | Purpose                            |
+| ------ | ------------ | ---------------------------------- |
+| GET    | `/`          | Check payment service availability |
+| POST   | `/payments/` | Process a simulated payment        |
+
+The payment endpoint requires a valid JWT access token and verifies that the selected card belongs to the authenticated user.
 
 ## Example Requests
 
-### Register
+### Register a user
 
 `POST /api/users/register/`
 
@@ -108,7 +159,7 @@ FastAPI base URL: `http://127.0.0.1:8001`
 }
 ```
 
-### Login
+### Log in
 
 `POST /api/users/login/`
 
@@ -119,9 +170,9 @@ FastAPI base URL: `http://127.0.0.1:8001`
 }
 ```
 
-Use the returned access token as a Bearer token for protected Django endpoints. The logout endpoint expects the refresh token.
+Use the returned access token as a Bearer token for protected endpoints. The logout endpoint expects the refresh token.
 
-### Add Card
+### Add card metadata
 
 `POST /api/cards/add/`
 
@@ -135,38 +186,65 @@ Use the returned access token as a Bearer token for protected Django endpoints. 
 }
 ```
 
-Use values accepted by the project's model. Do not send or store a full card number or CVV.
+Use values accepted by the project's model. Never submit or store a full card number or CVV.
 
-### Submit Payment
+### Submit a payment
 
 `POST http://127.0.0.1:8001/payments/`
 
+Headers:
+
+```text
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: application/json
+```
+
+Body:
+
 ```json
 {
-  "user_id": 1,
   "card_id": 1,
   "amount": 250.00
 }
 ```
 
-The IDs must refer to valid records in the database used by the payment service. The current implementation randomly returns `SUCCESS` or `FAILED`; it is a simulation, not a real payment gateway.
+Replace the example card ID with a card belonging to the authenticated user.
 
-## Transaction Filters
+The service simulates a payment outcome and returns a transaction ID, amount, initial status, and final status. The final result is randomly selected as `SUCCESS` or `FAILED`. This is a simulation, not a connection to a real payment gateway.
 
-The transaction history endpoint supports these optional query parameters:
-- `status` — such as `SUCCESS` or `FAILED`
-- `min_amount`
-- `max_amount`
-- `start_date` — `YYYY-MM-DD`
-- `end_date` — `YYYY-MM-DD`
+## Transaction Filtering and Export
+
+The transaction history endpoint supports optional query parameters:
+
+* `status` — for example, `SUCCESS` or `FAILED`
+* `min_amount` — minimum transaction amount
+* `max_amount` — maximum transaction amount
+* `start_date` — start date in `YYYY-MM-DD` format
+* `end_date` — end date in `YYYY-MM-DD` format
 
 Example:
 
-`/api/transactions/?status=SUCCESS&min_amount=100&max_amount=1000`
+```text
+/api/transactions/?status=SUCCESS&min_amount=100&max_amount=1000
+```
+
+The project also supports exporting transaction records as CSV.
+
+## Administration
+
+Visit `http://127.0.0.1:8000/admin/` and sign in with your Django superuser account.
+
+The Django admin interface provides access to the configured user, card, transaction, and administrative log records.
+
+The daily transaction summary is available at:
+
+```text
+http://127.0.0.1:8000/admin/transactions/transaction/daily-summary/
+```
 
 ## Run Tests
 
-Run the Django tests:
+Run the Django test suite:
 
 ```powershell
 python manage.py test
@@ -178,23 +256,31 @@ Run the FastAPI tests:
 python -m pytest fastapi_app/test_main.py -v
 ```
 
-Run all 18 tests with combined coverage:
+Run the combined test suite with coverage:
 
 ```powershell
 python -m pytest users/tests.py cards/tests.py transactions/tests.py fastapi_app/test_main.py --ds=config.settings --cov=users --cov=cards --cov=transactions --cov=fastapi_app --cov-report=term-missing
 ```
 
-The development test run passed 18 tests and reported 92% coverage. Run the command again to verify results in your environment.
+The latest recorded combined test run passed **20 tests** and reported **91% total coverage**. Re-run the command in your environment to confirm the current result.
 
 ## Security Notes
 
-- Django's user creation API hashes passwords.
-- Card records should contain only masked card details and the last four digits. Never store CVV or full card numbers.
-- Keep database credentials and JWT tokens out of source control.
-- The current FastAPI payment endpoint does not authenticate the caller or verify card ownership. Add authentication and ownership validation before any production use.
-- Payment outcomes are simulated; no real payment gateway is connected.
-- Use dummy test data only.
+* Django handles password hashing through its user authentication system.
+* The FastAPI payment endpoint validates the JWT access token and checks card ownership.
+* Card records should contain only masked card details and the last four digits.
+* Never store CVV values or full card numbers.
+* Keep `.env` and all real credentials out of source control.
+* Use parameterized database queries and validated request data.
+* Payment outcomes are simulated; no real payment gateway is connected.
+* Use dummy data for development and testing. This project is for learning and should receive a security review before production use.
 
 ## Postman
 
-Import `credit_card_payment_system.postman_collection.json` into Postman. Register and log in first, then use the saved access token for protected Django requests. Set valid `userId` and `cardId` values before submitting a payment.
+Import `credit_card_payment_system.postman_collection.json` into Postman.
+
+Register and log in first. Use the returned access token for protected Django requests and FastAPI payments. Ensure the selected card belongs to the logged-in user before testing a payment.
+
+## License
+
+This project is intended for learning and demonstration purposes.
