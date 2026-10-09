@@ -1,0 +1,196 @@
+﻿{
+  "info": {
+    "name": "Credit Card Payment System",
+    "description": "API collection for Django authentication, card management, transaction history, and the FastAPI payment service. Payments are simulated for development only.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "djangoBaseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "fastapiBaseUrl", "value": "http://127.0.0.1:8001" },
+    { "key": "username", "value": "demo_user" },
+    { "key": "email", "value": "demo@example.com" },
+    { "key": "password", "value": "Change-This-Local-Password" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "1" },
+    { "key": "cardId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "1. User Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{djangoBaseUrl}}/api/users/register/"
+          }
+        },
+        {
+          "name": "Login - Save JWT Tokens",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  if (data.access) pm.collectionVariables.set('accessToken', data.access);",
+                  "  if (data.refresh) pm.collectionVariables.set('refreshToken', data.refresh);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{djangoBaseUrl}}/api/users/login/"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "url": "{{djangoBaseUrl}}/api/users/profile/"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{djangoBaseUrl}}/api/users/logout/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Card Management",
+      "item": [
+        {
+          "name": "Add Card",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"card_type\": \"CREDIT\",\n  \"cardholder_name\": \"Demo User\",\n  \"masked_card_number\": \"**** **** **** 1234\",\n  \"last_four_digits\": \"1234\",\n  \"expiry_date\": \"2028-12-31\"\n}"
+            },
+            "url": "{{djangoBaseUrl}}/api/cards/add/"
+          }
+        },
+        {
+          "name": "List My Cards",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "url": "{{djangoBaseUrl}}/api/cards/"
+          }
+        },
+        {
+          "name": "Delete Card by ID",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "url": "{{djangoBaseUrl}}/api/cards/{{cardId}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Transaction History",
+      "item": [
+        {
+          "name": "List My Transactions",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "url": "{{djangoBaseUrl}}/api/transactions/"
+          }
+        },
+        {
+          "name": "Filter Transactions",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "url": {
+              "raw": "{{djangoBaseUrl}}/api/transactions/?status=SUCCESS&min_amount=100&max_amount=1000&start_date=2026-01-01&end_date=2026-12-31",
+              "host": ["{{djangoBaseUrl}}"],
+              "path": ["api", "transactions", ""],
+              "query": [
+                { "key": "status", "value": "SUCCESS" },
+                { "key": "min_amount", "value": "100" },
+                { "key": "max_amount", "value": "1000" },
+                { "key": "start_date", "value": "2026-01-01" },
+                { "key": "end_date", "value": "2026-12-31" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. FastAPI Payments",
+      "item": [
+        {
+          "name": "Payment Service Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{fastapiBaseUrl}}/"
+          }
+        },
+        {
+          "name": "Submit Simulated Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"card_id\": {{cardId}},\n  \"amount\": 250.00\n}"
+            },
+            "url": "{{fastapiBaseUrl}}/payments/"
+          }
+        }
+      ]
+    }
+  ]
+}

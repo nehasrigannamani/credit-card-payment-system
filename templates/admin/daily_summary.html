@@ -1,0 +1,27 @@
+
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>Daily Payment Summary</h1>
+
+<p><strong>Date:</strong> {{ today }}</p>
+
+<table>
+    <tr>
+        <th>Total Payments</th>
+        <td>{{ summary.total_payments|default:0 }}</td>
+    </tr>
+    <tr>
+        <th>Successful Payments</th>
+        <td>{{ summary.successful_payments|default:0 }}</td>
+    </tr>
+    <tr>
+        <th>Failed Payments</th>
+        <td>{{ summary.failed_payments|default:0 }}</td>
+    </tr>
+    <tr>
+        <th>Total Successful Amount</th>
+        <td>{{ summary.successful_amount|default:0 }}</td>
+    </tr>
+</table>
+{% endblock %}
